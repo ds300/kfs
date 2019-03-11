@@ -1,9 +1,4 @@
-import {
-  UseIncremental,
-  MaybePromise,
-  ExtractDiffType,
-  Derivable,
-} from "./impl/types"
+import { UseIncremental, MaybePromise, Derivable, DiffOf } from "./impl/types"
 import { Reactor as ReactorImpl } from "./impl/Reactor"
 import { Atom } from "./impl/Atom"
 import { Derivation } from "./impl/Derivation"
@@ -48,7 +43,7 @@ export function atom<T>(init: T): Store<T> {
 export function derive<T>(
   deriver: (use: Use) => T,
   options?: {
-    incremental: (use: UseIncremental) => MaybePromise<ExtractDiffType<T>[]>
+    incremental: (use: UseIncremental) => MaybePromise<DiffOf<T>>
   },
 ): Derivable<T> {
   return new Derivation(deriver as any) as any
