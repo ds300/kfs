@@ -1,0 +1,10 @@
+{
+  "name": "dev-fs-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    
+  }
+}
