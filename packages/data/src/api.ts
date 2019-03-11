@@ -19,7 +19,9 @@ export interface Reactor {
 
 export type Use = <T>(derivable: Derivable<T>) => T
 
-export function reactor(reactFn: (use: Use) => void | Promise<void>): Reactor {
+export function reactor(
+  reactFn: (use: UseIncremental) => void | Promise<void>,
+): Reactor {
   return new ReactorImpl(reactFn as any)
 }
 
@@ -40,6 +42,32 @@ export function atom<T>(init: T): Store<T> {
   return new Atom(init) as any
 }
 
-export function derive<T>(deriver: (use: Use) => T): Derivable<T> {
+export interface Diffable<Diff extends { type: string }> {
+  diff(other: this): Diff[]
+}
+
+export interface BaseDiff<T> {
+  type: "reset"
+  value: T
+}
+
+export type MaybePromise<T> = T | Promise<T>
+
+export type UseIncremental = Use & {
+  diff<T>(derivable: Derivable<T>): MaybePromise<Array<ExtractDiffType<T>>>
+}
+
+type ExtractDiffType<T> = T extends Diffable<infer D>
+  ? D
+  : T extends Promise<Diffable<infer D>>
+  ? D
+  : BaseDiff<T>
+
+export function derive<T>(
+  deriver: (use: Use) => T,
+  options?: {
+    incremental: (use: UseIncremental) => MaybePromise<ExtractDiffType<T>[]>
+  },
+): Derivable<T> {
   return new Derivation(deriver as any) as any
 }

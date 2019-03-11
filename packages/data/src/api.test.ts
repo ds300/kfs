@@ -1,4 +1,4 @@
-import { atom, reactor, derive, Derivable } from "./api"
+import { atom, reactor, derive, Derivable, BaseDiff } from "./api"
 
 const deref = async <T>(derivable: Derivable<T>): Promise<T> => {
   return new Promise(resolve => {
@@ -173,10 +173,50 @@ describe("derivations", () => {
 
     r.stop()
   })
+
+  it("can be incremental", async () => {
+    const root = atom("banana")
+    const reversed = derive(
+      use =>
+        use(root)
+          .split("")
+          .reverse()
+          .join(""),
+      {
+        incremental: async use => {
+          const diff = await use.diff(root)
+          return diff.map(patch => {
+            switch (patch.type) {
+              case "reset":
+                return {
+                  type: "reset" as "reset",
+                  value: patch.value
+                    .split("")
+                    .reverse()
+                    .join(""),
+                }
+            }
+          })
+        },
+      },
+    )
+    const theValueIs = jest.fn()
+
+    const r = reactor(async use => {
+      theValueIs(await use.diff(reversed))
+    }).start()
+
+    await timeout(1)
+
+    expect(theValueIs).toHaveBeenCalledWith("ananab")
+
+    r.stop()
+  })
 })
 
 // caching [done? need more tests]
 // incremental derivations
+// pluggable equality
 // transactions: global update function
 // redux store + dispatch instead of atom as primary state container
 // async derefs of derivations (wait on existing promise)
