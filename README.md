@@ -34,4 +34,4 @@ The incremental state management API will be designed from the ground up for gen
 
 ## This is nuts I want to help
 
-[@ me on twitter](https://twitter.com/djsheldrick) or [email me](d.j.sheldrick@gmail.com) with ideas or questions.
+[@ me on twitter](https://twitter.com/djsheldrick) or [email me](mailto:d.j.sheldrick@gmail.com) with ideas or questions.
