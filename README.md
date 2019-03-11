@@ -20,6 +20,7 @@ The `k` in `kfs` doesn't stand for anything. The npm org name was free, the goog
 
 ## Why?
 
+- Helping our tools play nicely with each other (through derived files and pluggable resolution logic)
 - Making monorepos easier to work on (through fine-grained change tracking).
 - Making CI much cheaper (through robust incremental builds).
 
