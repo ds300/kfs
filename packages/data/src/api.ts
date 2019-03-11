@@ -1,4 +1,9 @@
-import { Reactor, Atom, Derivation, Derivable } from "./implementation"
+import {
+  Reactor as ReactorImpl,
+  Atom,
+  Derivation,
+  Derivable,
+} from "./implementation"
 
 export { Derivable }
 
@@ -7,10 +12,15 @@ export interface Store<T> extends Derivable<T> {
   update(updater: (val: T) => T): Promise<T>
 }
 
+export interface Reactor {
+  start(): this
+  stop(): this
+}
+
 export type Use = <T>(derivable: Derivable<T>) => T
 
-export function reactor(reactFn: (use: Use) => void | Promise<void>) {
-  return new Reactor(reactFn as any)
+export function reactor(reactFn: (use: Use) => void | Promise<void>): Reactor {
+  return new ReactorImpl(reactFn as any)
 }
 
 export function when(
