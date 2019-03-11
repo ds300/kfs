@@ -1,10 +1,13 @@
 {
   "name": "dev-fs-monorepo",
   "private": true,
+  "scripts": {
+    "test": "yarn workspaces run test"
+  },
   "workspaces": [
     "packages/*"
   ],
   "dependencies": {
-    
+
   }
 }

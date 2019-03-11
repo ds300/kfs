@@ -1,4 +1,4 @@
-import { atom, reactor, derive, Derivable, BaseDiff } from "./api"
+import { atom, reactor, derive, Derivable } from "./api"
 
 const deref = async <T>(derivable: Derivable<T>): Promise<T> => {
   return new Promise(resolve => {
@@ -208,7 +208,12 @@ describe("derivations", () => {
 
     await timeout(1)
 
-    expect(theValueIs).toHaveBeenCalledWith("ananab")
+    expect(theValueIs).toHaveBeenCalledWith([
+      {
+        type: "reset",
+        value: "ananab",
+      },
+    ])
 
     r.stop()
   })

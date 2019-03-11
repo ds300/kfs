@@ -1,9 +1,12 @@
 import {
-  Reactor as ReactorImpl,
-  Atom,
-  Derivation,
+  UseIncremental,
+  MaybePromise,
+  ExtractDiffType,
   Derivable,
-} from "./implementation"
+} from "./impl/types"
+import { Reactor as ReactorImpl } from "./impl/Reactor"
+import { Atom } from "./impl/Atom"
+import { Derivation } from "./impl/Derivation"
 
 export { Derivable }
 
@@ -41,27 +44,6 @@ export function when(
 export function atom<T>(init: T): Store<T> {
   return new Atom(init) as any
 }
-
-export interface Diffable<Diff extends { type: string }> {
-  diff(other: this): Diff[]
-}
-
-export interface BaseDiff<T> {
-  type: "reset"
-  value: T
-}
-
-export type MaybePromise<T> = T | Promise<T>
-
-export type UseIncremental = Use & {
-  diff<T>(derivable: Derivable<T>): MaybePromise<Array<ExtractDiffType<T>>>
-}
-
-type ExtractDiffType<T> = T extends Diffable<infer D>
-  ? D
-  : T extends Promise<Diffable<infer D>>
-  ? D
-  : BaseDiff<T>
 
 export function derive<T>(
   deriver: (use: Use) => T,
