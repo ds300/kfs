@@ -1,7 +1,24 @@
-import { Parent, Derivable, Child } from "./types"
+import { Parent, Derivable, Child, DiffOf, Diffable } from "./types"
 
 import { Reactor } from "./Reactor"
 import { DiffBuffer } from "./DiffBuffer"
+
+function isDiffable(x: any): x is Diffable<any> {
+  return typeof x === "object" && x !== null && typeof x.diff === "function"
+}
+
+const diff = <T>(prev: T, next: T): DiffOf<T> => {
+  if (isDiffable(next)) {
+    return next.diff(prev) as any
+  } else {
+    return [
+      {
+        type: "reset",
+        value: next,
+      } as any,
+    ]
+  }
+}
 
 export class Atom<T> implements Parent<T>, Derivable<T> {
   constructor(initialState: T) {
@@ -12,18 +29,13 @@ export class Atom<T> implements Parent<T>, Derivable<T> {
   epoch = 0
   diffs = new DiffBuffer<T>(8)
   children: Child[] = []
+  diffChildren: Child[] = []
   __unsafe_get_value() {
     return this.state
   }
   __unsafe_get_diff(sinceEpoch: number) {
     if (sinceEpoch === this.epoch) {
       return []
-    }
-    if (this.epoch > this.diffs.lastEpoch) {
-      while (this.diffs.lastEpoch < this.epoch - 1) {
-        this.diffs.add(null, this.diffs.lastEpoch + 1)
-      }
-      this.diffs.add()
     }
     return (
       this.diffs.diffSince(sinceEpoch) ||
@@ -35,6 +47,11 @@ export class Atom<T> implements Parent<T>, Derivable<T> {
       return value
     }
     this.epoch++
+    if (this.diffChildren.length > 0) {
+      this.diffs.add(diff(this.state, value), this.epoch)
+    } else {
+      this.diffs.add(null, this.epoch)
+    }
     const reactors: Reactor[] = []
     this.state = value
     for (const child of this.children) {

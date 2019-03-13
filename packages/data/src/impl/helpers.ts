@@ -1,4 +1,3 @@
-import { Reactor } from "./Reactor"
 import { Child, Parent } from "./types"
 
 export function isChild(x: any): x is Child {

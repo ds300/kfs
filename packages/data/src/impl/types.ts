@@ -13,6 +13,7 @@ export interface Child {
 
 export interface Parent<T> extends Derivable<T> {
   children: Child[]
+  diffChildren: Child[]
   epoch: number
   dirty: boolean
 }
