@@ -48,9 +48,13 @@ export class Atom<T> implements Parent<T>, Derivable<T> {
     }
     this.epoch++
     if (this.diffChildren.length > 0) {
-      this.diffs.add(diff(this.state, value), this.epoch)
+      this.diffs.add({
+        diff: diff(this.state, value),
+        fromEpoch: this.epoch - 1,
+        toEpoch: this.epoch,
+      })
     } else {
-      this.diffs.add(null, this.epoch)
+      this.diffs.add(null)
     }
     const reactors: Reactor[] = []
     this.state = value
