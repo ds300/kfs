@@ -1,11 +1,15 @@
 {
   "name": "@kfs/data",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/api.js",
   "license": "MIT",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "prepublishOnly": "tsc"
   },
+  "files": [
+    "dist"
+  ],
   "devDependencies": {
     "@types/jest": "^24.0.11",
     "jest": "^24.3.1",

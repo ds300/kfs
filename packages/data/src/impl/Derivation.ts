@@ -10,6 +10,7 @@ export class Derivation<T> implements Child, Parent<T>, Derivable<T> {
   epoch = 0
   dirty = true
   children: Child[] = []
+  diffChildren: Child[] = []
   parents: Parent<any>[] = []
   parentEpochs: number[] = []
   state: T = (null as unknown) as T
@@ -65,6 +66,9 @@ export class Derivation<T> implements Child, Parent<T>, Derivable<T> {
       return this.state
     }
     return this.__getValue()
+  }
+  __unsafe_get_diff() {
+    return null as any
   }
 
   traverseReactors(cb: (r: Reactor) => void) {

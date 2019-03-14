@@ -1,10 +1,9 @@
 import {
   Parent,
   Child,
-  Use,
   UseIncremental,
-  ExtractDiffType,
   Derivable,
+  DiffOf
 } from "./types"
 import { addChild, removeChild } from "./helpers"
 
@@ -53,7 +52,7 @@ export class UseContext {
       return result
     },
     {
-      diff: <T>(derivable: Derivable<T>): ExtractDiffType<T>[] => {
+      diff: <T>(derivable: Derivable<T>): DiffOf<T> => {
         return [{ type: "reset", value: this.use(derivable) }] as any
       },
     },
