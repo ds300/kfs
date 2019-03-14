@@ -1,8 +1,10 @@
 import { Reactor } from "./Reactor"
 
+export type UnpackPromise<T> = T extends Promise<infer R> ? R : T
+
 export interface Derivable<T> {
   __unsafe_get_value(): T
-  __unsafe_get_diff(sinceEpoch: number): DiffOf<T>
+  __unsafe_get_diff(sinceEpoch: number): MaybePromise<DiffOf<UnpackPromise<T>>>
 }
 
 export interface Child {
@@ -42,3 +44,20 @@ type ExtractDiffType<T> = T extends Diffable<infer D>
   : BaseDiff<T>
 
 export type DiffOf<T> = ExtractDiffType<T>[]
+
+function isDiffable(x: any): x is Diffable<any> {
+  return typeof x === "object" && x !== null && typeof x.diff === "function"
+}
+
+export const diff = <T>(prev: T, next: T): DiffOf<T> => {
+  if (isDiffable(next)) {
+    return next.diff(prev) as any
+  } else {
+    return [
+      {
+        type: "reset",
+        value: next,
+      } as any,
+    ]
+  }
+}

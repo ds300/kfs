@@ -87,6 +87,8 @@ export class DiffBuffer<T> {
     this.diffs = new Array(size)
   }
 
+  // TODO: decide whether it should collapse all the diffs but the last one
+  // for things that have been derefin' during the transaction
   transactionEnded() {
     if (this.transactionOverflow) {
       const transactionDiffRecord: DiffRecord<T> = {

@@ -1,24 +1,7 @@
-import { Parent, Derivable, Child, DiffOf, Diffable } from "./types"
+import { Parent, Derivable, Child, diff } from "./types"
 
 import { Reactor } from "./Reactor"
 import { DiffBuffer } from "./DiffBuffer"
-
-function isDiffable(x: any): x is Diffable<any> {
-  return typeof x === "object" && x !== null && typeof x.diff === "function"
-}
-
-const diff = <T>(prev: T, next: T): DiffOf<T> => {
-  if (isDiffable(next)) {
-    return next.diff(prev) as any
-  } else {
-    return [
-      {
-        type: "reset",
-        value: next,
-      } as any,
-    ]
-  }
-}
 
 export class Atom<T> implements Parent<T>, Derivable<T> {
   constructor(initialState: T) {
