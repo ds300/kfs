@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "@kfs/server",
-  "version": "0.0.1",
+  "version": "0.0.1-0",
   "description": "",
   "main": "build/index.js",
   "author": "David Sheldrick <djsheldrick@gmail.com>",
