@@ -10,10 +10,12 @@ export class Reactor implements Child {
   ) {
     this.reactFn = reactFn
   }
-  ctx = new UseContext()
+  ctx = new UseContext(this)
   stopping = false
   parents: Parent<any>[] = []
   parentEpochs: number[] = []
+  diffParents: Parent<any>[] = []
+  diffParentEpochs: number[] = []
   async react() {
     let parentsHaveChanged = haveParentsChanged(this)
     if (parentsHaveChanged instanceof Promise) {
@@ -27,7 +29,7 @@ export class Reactor implements Child {
     if (result) {
       await result
     }
-    this.ctx.stopCapture(this)
+    this.ctx.stopCapture()
     if (this.stopping) {
       this._stop()
     }

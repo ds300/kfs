@@ -157,8 +157,71 @@ describe("reactors", () => {
         value: new DiffableSet().add("cheese").add("mollusc"),
       },
     ])
+  })
 
-    // todo: use diffChildren
+  it("can be properly incremental (diffable set)", async () => {
+    const value = atom(new DiffableSet())
+    const theDiffIs = jest.fn()
+    const r = reactor(use => {
+      theDiffIs(use.diff(value))
+    }).start()
+
+    expect(theDiffIs).toHaveBeenCalledWith([
+      {
+        type: "reset",
+        value: new DiffableSet(),
+      },
+    ])
+
+    value.update(val => val.add("cheese"))
+
+    expect(theDiffIs).toHaveBeenCalledWith([
+      {
+        type: "add",
+        key: "cheese",
+      },
+    ])
+
+    value.update(val => val.add("mollusc").add("banana"))
+
+    expect(theDiffIs).toHaveBeenCalledWith([
+      {
+        type: "add",
+        key: "mollusc",
+      },
+      {
+        type: "add",
+        key: "banana",
+      },
+    ])
+
+    value.update(val => val.remove("mollusc").add("banana"))
+
+    expect(theDiffIs).toHaveBeenCalledWith([
+      {
+        type: "remove",
+        key: "mollusc",
+      },
+    ])
+
+    value.update(val => val.remove("banana").add("poughkeepsie").add("joelle"))
+
+    expect(theDiffIs).toHaveBeenCalledWith([
+      {
+        type: "add",
+        key: "poughkeepsie"
+      },
+      {
+        type: "add",
+        key: "joelle"
+      },
+      {
+        type: "remove",
+        key: "banana",
+      },
+    ])
+
+    r.stop()
   })
 })
 
@@ -176,23 +239,23 @@ class DiffableSet implements Diffable<SetDiff> {
     this.elements = elements
   }
 
-  diff(other: this) {
-    if (other === this) {
+  diff(prev: this) {
+    if (prev === this) {
       return []
     }
     const result: SetDiff[] = []
     for (const elem of this.elements) {
-      if (!other.elements.includes(elem)) {
+      if (!prev.elements.includes(elem)) {
         result.push({
-          type: "remove",
+          type: "add",
           key: elem,
         })
       }
     }
-    for (const elem of other.elements) {
+    for (const elem of prev.elements) {
       if (!this.elements.includes(elem)) {
         result.push({
-          type: "add",
+          type: "remove",
           key: elem,
         })
       }

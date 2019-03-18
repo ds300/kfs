@@ -10,6 +10,8 @@ export interface Derivable<T> {
 export interface Child {
   parents: Parent<any>[]
   parentEpochs: number[]
+  diffParents: Parent<any>[]
+  diffParentEpochs: number[]
   traverseReactors(cb: (reactor: Reactor) => void): void
 }
 

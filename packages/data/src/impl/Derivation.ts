@@ -23,12 +23,14 @@ export class Derivation<T> implements Child, Parent<T>, Derivable<T> {
   diffChildren: Child[] = []
   parents: Parent<any>[] = []
   parentEpochs: number[] = []
+  diffParents: Parent<any>[] = []
+  diffParentEpochs: number[] = []
   diffs: DiffBuffer<UnpackPromise<T>> = new DiffBuffer(8)
   state: UnpackPromise<T> = (null as unknown) as UnpackPromise<T>
   constructor(public derive: (use: Use) => T) {
     this.derive = derive
   }
-  ctx = new UseContext()
+  ctx = new UseContext(this)
   isAsync = false
 
   __getValue(): T {
@@ -36,7 +38,7 @@ export class Derivation<T> implements Child, Parent<T>, Derivable<T> {
     const result = this.derive(this.ctx.use)
     if (result instanceof Promise) {
       return (result.then((r: UnpackPromise<T>) => {
-        this.ctx.stopCapture(this)
+        this.ctx.stopCapture()
         this.dirty = false
         if (this.epoch === 0 || this.state !== r) {
           this.epoch++
@@ -71,7 +73,7 @@ export class Derivation<T> implements Child, Parent<T>, Derivable<T> {
       this.isAsync = false
       this.state = result as UnpackPromise<T>
     }
-    this.ctx.stopCapture(this)
+    this.ctx.stopCapture()
     return result
   }
   /**
@@ -145,6 +147,9 @@ export class Derivation<T> implements Child, Parent<T>, Derivable<T> {
   traverseReactors(cb: (r: Reactor) => void) {
     this.dirty = true
     for (const child of this.children) {
+      child.traverseReactors(cb)
+    }
+    for (const child of this.diffChildren) {
       child.traverseReactors(cb)
     }
   }

@@ -25,6 +25,7 @@ export class Atom<T> implements Parent<T>, Derivable<T> {
       ([{ type: "reset", value: this.state }] as any)
     )
   }
+
   async set(value: T): Promise<T> {
     if (value === this.state) {
       return value
@@ -39,9 +40,16 @@ export class Atom<T> implements Parent<T>, Derivable<T> {
     } else {
       this.diffs.add(null)
     }
-    const reactors: Reactor[] = []
+    const reactors: Reactor[] =[]
     this.state = value
     for (const child of this.children) {
+      child.traverseReactors(r => {
+        if (!reactors.includes(r)) {
+          reactors.push(r)
+        }
+      })
+    }
+    for (const child of this.diffChildren) {
       child.traverseReactors(r => {
         if (!reactors.includes(r)) {
           reactors.push(r)
