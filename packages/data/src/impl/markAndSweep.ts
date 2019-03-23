@@ -5,7 +5,6 @@ import { addToArray, removeFromArray, isChild } from "./helpers"
 let markedChildren: (Parent<any> & Child)[] | null = null
 
 export function beginMarkPhase() {
-  console.log("Setting marked children")
   markedChildren = []
 }
 

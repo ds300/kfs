@@ -37,7 +37,7 @@ describe("atoms", () => {
       theValueIs(use(state))
     }).start()
     expect(theValueIs).toHaveBeenCalledWith("hello")
-    state.update(_ => "hello world")
+    await state.update(_ => "hello world")
     await timeout(10)
     expect(theValueIs).toHaveBeenCalledWith("hello world")
   })
@@ -59,7 +59,7 @@ describe("reactors", () => {
     await timeout(30)
     expect(theValueIs).toHaveBeenCalledWith("ab")
 
-    b.set("c")
+    await b.set("c")
 
     await timeout(30)
     expect(theValueIs).toHaveBeenCalledWith("ac")
@@ -67,7 +67,7 @@ describe("reactors", () => {
     expect(theValueIs).toHaveBeenCalledTimes(2)
   })
 
-  it("only react when the parent changes", () => {
+  it("only react when the parent changes", async () => {
     const root = atom("banana")
     const anan = derive(use => {
       const match = use(root).match(/(an)+/)
@@ -80,18 +80,18 @@ describe("reactors", () => {
       theValueIs(use(anan))
     }).start()
     expect(theValueIs).toHaveBeenCalledTimes(1)
-    root.set("bananana")
+    await root.set("bananana")
     expect(theValueIs).toHaveBeenCalledTimes(2)
-    root.set("cananana")
+    await root.set("cananana")
     expect(theValueIs).toHaveBeenCalledTimes(2)
-    root.set("dananana")
+    await root.set("dananana")
     expect(theValueIs).toHaveBeenCalledTimes(2)
-    root.set("dan")
+    await root.set("dan")
     expect(theValueIs).toHaveBeenCalledTimes(3)
     r.stop()
   })
 
-  it("are cached with multiple parents", () => {
+  it("are cached with multiple parents", async () => {
     const wordA = atom("a")
     const wordB = atom("b")
 
@@ -105,19 +105,19 @@ describe("reactors", () => {
     }).start()
 
     expect(theValueIs).toHaveBeenCalledTimes(1)
-    wordA.set("apple")
+    await wordA.set("apple")
     expect(theValueIs).toHaveBeenCalledTimes(1)
-    wordB.set("banana")
+    await wordB.set("banana")
     expect(theValueIs).toHaveBeenCalledTimes(1)
-    wordB.set("coffee")
+    await wordB.set("coffee")
     expect(theValueIs).toHaveBeenCalledTimes(2)
-    wordB.set("drugs")
+    await wordB.set("drugs")
     expect(theValueIs).toHaveBeenCalledTimes(2)
-    wordA.set("egads")
+    await wordA.set("egads")
     expect(theValueIs).toHaveBeenCalledTimes(2)
-    wordA.set("amigo")
+    await wordA.set("amigo")
     expect(theValueIs).toHaveBeenCalledTimes(2)
-    wordB.set("brilliant")
+    await wordB.set("brilliant")
     expect(theValueIs).toHaveBeenCalledTimes(3)
     r.stop()
   })
@@ -148,9 +148,9 @@ describe("reactors", () => {
       },
     ])
 
-    value.update(val => val.add("cheese"))
+    await value.update(val => val.add("cheese"))
 
-    value.update(val => val.add("mollusc"))
+    await value.update(val => val.add("mollusc"))
 
     expect(await derefDiff(value)).toEqual([
       {
@@ -174,7 +174,7 @@ describe("reactors", () => {
       },
     ])
 
-    value.update(val => val.add("cheese"))
+    await value.update(val => val.add("cheese"))
 
     expect(theDiffIs).toHaveBeenCalledWith([
       {
@@ -183,7 +183,7 @@ describe("reactors", () => {
       },
     ])
 
-    value.update(val => val.add("mollusc").add("banana"))
+    await value.update(val => val.add("mollusc").add("banana"))
 
     expect(theDiffIs).toHaveBeenCalledWith([
       {
@@ -196,7 +196,7 @@ describe("reactors", () => {
       },
     ])
 
-    value.update(val => val.remove("mollusc").add("banana"))
+    await value.update(val => val.remove("mollusc").add("banana"))
 
     expect(theDiffIs).toHaveBeenCalledWith([
       {
@@ -205,7 +205,7 @@ describe("reactors", () => {
       },
     ])
 
-    value.update(val =>
+    await value.update(val =>
       val
         .remove("banana")
         .add("poughkeepsie")
@@ -317,14 +317,14 @@ describe("derivations", () => {
 
     expect(theValueIs).toHaveBeenCalledWith("HELLO")
 
-    word.set("banana")
+    await word.set("banana")
 
     expect(theValueIs).toHaveBeenCalledWith("BANANA")
 
     r.stop()
   })
 
-  it.only("can be async", async () => {
+  it("can be async", async () => {
     const wordA = atom("button")
     const wordB = atom("down")
 
@@ -372,9 +372,9 @@ describe("derivations", () => {
     ])
 
     theDiffIs.mockReset()
-    setA.update(set => set.add("banana"))
+    await setA.update(set => set.add("banana"))
     expect(theDiffIs).not.toHaveBeenCalled()
-    setB.update(set => set.add("banana"))
+    await setB.update(set => set.add("banana"))
     expect(theDiffIs).toHaveBeenCalledWith([
       {
         type: "add",
