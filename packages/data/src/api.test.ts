@@ -176,11 +176,11 @@ describe("reactors", () => {
     expect(theDiffIs).toHaveBeenCalledWith([
       {
         type: "add",
-        key: "mollusc",
+        key: "banana",
       },
       {
         type: "add",
-        key: "banana",
+        key: "mollusc",
       },
     ])
 
@@ -203,11 +203,11 @@ describe("reactors", () => {
     expect(theDiffIs).toHaveBeenCalledWith([
       {
         type: "add",
-        key: "poughkeepsie",
+        key: "joelle",
       },
       {
         type: "add",
-        key: "joelle",
+        key: "poughkeepsie",
       },
       {
         type: "remove",
@@ -228,7 +228,7 @@ type SetDiff = { type: "add"; key: string } | { type: "remove"; key: string }
 
 class DiffableSet implements Diffable<SetDiff> {
   constructor(public elements: string[] = []) {
-    this.elements = elements
+    this.elements = elements.sort()
   }
 
   diff(prev: this) {
@@ -253,6 +253,17 @@ class DiffableSet implements Diffable<SetDiff> {
       }
     }
     return result
+  }
+
+  patch(diff: SetDiff[]) {
+    return diff.reduce((acc, patch) => {
+      switch (patch.type) {
+        case "add":
+          return acc.add(patch.key) as this
+        case "remove":
+          return acc.remove(patch.key) as this
+      }
+    }, this)
   }
 
   add(elem: string) {
@@ -434,6 +445,43 @@ describe("derivations", () => {
         },
       },
     )
+    const theDiffIs = jest.fn()
+    const r = await reactor(use => {
+      theDiffIs(use.diff(union))
+    }).start()
+
+    expect(theDiffIs).toBeCalledWith([
+      {
+        type: "reset",
+        value: new DiffableSet(["a", "b", "c", "d", "e", "f"]),
+      },
+    ])
+
+    await setA.update(a => a.add("g"))
+
+    expect(theDiffIs).toBeCalledWith([
+      {
+        type: "add",
+        key: "g",
+      },
+    ])
+
+    await setB.update(b => b.remove("f"))
+
+    expect(theDiffIs).toBeCalledWith([
+      {
+        type: "remove",
+        key: "f",
+      },
+    ])
+
+    theDiffIs.mockReset()
+
+    await setB.update(b => b.add("a"))
+
+    expect(theDiffIs).not.toHaveBeenCalled()
+
+    r.stop()
   })
 })
 

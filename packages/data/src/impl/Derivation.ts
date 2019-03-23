@@ -1,11 +1,4 @@
-import {
-  Child,
-  Parent,
-  Use,
-  DiffOf,
-  diff,
-  MaybePromise,
-} from "./types"
+import { Child, Parent, Use, DiffOf, diff, MaybePromise } from "./types"
 
 import { UseContext } from "./UseContext"
 
@@ -29,50 +22,47 @@ export class Derivation<T> implements Child, Parent<T> {
     this.derive = derive
   }
   ctx = new UseContext(this)
-  isAsync = false
+  isAsync: boolean | null = null
 
-  __getValue(): MaybePromise<T> {
-    this.ctx.startCapture()
-    const result = this.derive(this.ctx.use)
-    if (result instanceof Promise) {
-      return result.then((r: T) => {
-        this.ctx.stopCapture()
-        this.dirty = false
-        if (this.epoch === 0 || !equals(this.state, r)) {
-          this.epoch++
-          if (this.diffChildren.length > 0) {
-            this.diffs.add({
-              diff: diff(this.state, r),
-              fromEpoch: this.epoch - 1,
-              toEpoch: this.epoch,
-            })
-          } else {
-            this.diffs.add(null)
-          }
-          this.isAsync = true
-          this.state = r
-        }
-        return r
-      })
-    }
-
+  __handleNextValue(nextValue: T): T {
+    this.ctx.stopCapture()
     this.dirty = false
-    if (this.epoch === 0 || !equals(this.state, result)) {
+    if (this.epoch === 0 || !equals(this.state, nextValue)) {
       this.epoch++
       if (this.diffChildren.length > 0) {
         this.diffs.add({
-          diff: diff(this.state, result),
+          diff: diff(this.state, nextValue),
           fromEpoch: this.epoch - 1,
           toEpoch: this.epoch,
         })
       } else {
         this.diffs.add(null)
       }
-      this.isAsync = false
-      this.state = result
+      this.state = nextValue
     }
-    this.ctx.stopCapture()
-    return result
+    return nextValue
+  }
+  __getValue(): MaybePromise<T> {
+    this.ctx.startCapture()
+    const result = this.derive(this.ctx.use)
+    if (result instanceof Promise) {
+      if (this.isAsync === false) {
+        throw new Error(
+          "invariant violation: derive functions must consistently return a promise or consistently return an immediate value",
+        )
+      }
+      this.isAsync = true
+      return result.then((r: T) => this.__handleNextValue(r))
+    } else {
+      if (this.isAsync === true) {
+        throw new Error(
+          "invariant violation: derive functions must consistently return a promise or consistently return an immediate value",
+        )
+      }
+      this.isAsync = false
+    }
+
+    return this.__handleNextValue(result)
   }
 
   __unsafe_get_value(): MaybePromise<T> {

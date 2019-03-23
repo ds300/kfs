@@ -1,7 +1,7 @@
 import { Parent, Child, UseIncremental, Derivable, DiffOf } from "./types"
-import { addChild, removeChild, addDiffChild } from "./markAndSweep";
+import { addChild, removeChild, addDiffChild } from "./markAndSweep"
 
-const RESET = Symbol("reset incremental derivable")
+export const RESET = Symbol("reset incremental derivable")
 export class UseContext {
   child: Child
   constructor(child: Child) {

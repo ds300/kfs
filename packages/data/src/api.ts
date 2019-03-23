@@ -1,13 +1,15 @@
 import {
   UseIncremental,
-  MaybePromise,
   Derivable,
   DiffOf,
   SyncDerivable,
+  Patchable,
 } from "./impl/types"
 import { Reactor as ReactorImpl } from "./impl/Reactor"
 import { Atom } from "./impl/Atom"
 import { Derivation } from "./impl/Derivation"
+import { IncrementalDerivation } from "./impl/IncrementalDerivation"
+import { MaybePromise } from "graphql/jsutils/MaybePromise";
 
 export { Derivable }
 
@@ -46,13 +48,18 @@ export function atom<T>(init: T): Store<T> {
   return new Atom(init) as any
 }
 
-export function derive<T>(
+export function derive<T>(deriver: (use: Use) => T): Derivable<T>
+export function derive<T extends MaybePromise<Patchable<any>>>(
   deriver: (use: Use) => T,
-  options?: {
+  options: {
     incremental: T extends Promise<infer R>
       ? (use: UseIncremental) => Promise<DiffOf<R>>
       : (use: UseIncremental) => DiffOf<T>
   },
-): Derivable<T> {
+): Derivable<T>;
+export function derive(deriver: any, options?: any) {
+  if (options) {
+    return new IncrementalDerivation(deriver, options.incremental)
+  }
   return new Derivation(deriver as any) as any
 }

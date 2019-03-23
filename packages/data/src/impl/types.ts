@@ -36,6 +36,10 @@ export interface Diffable<Diff> {
   diff(other: any): Diff[]
 }
 
+export interface Patchable<Diff> {
+  patch(diff: Diff[]): this
+}
+
 export interface BaseDiff<T> {
   type: "reset"
   value: T

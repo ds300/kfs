@@ -1,4 +1,4 @@
-import { Child, Parent } from "./types"
+import { Child, Parent, MaybePromise } from "./types"
 
 export function isChild(x: any): x is Child {
   return x && Array.isArray(x.parents)
@@ -19,6 +19,16 @@ export function removeFromArray<T>(arr: T[], elem: T) {
     return true
   }
   return false
+}
+
+export function transformMaybePromise<T, R>(
+  val: MaybePromise<T>,
+  map: (val: T) => MaybePromise<R>,
+): MaybePromise<R> {
+  if (val instanceof Promise) {
+    return val.then(map)
+  }
+  return map(val)
 }
 
 function __parentEpochsHaveChanged(child: Child) {
