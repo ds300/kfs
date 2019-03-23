@@ -20,37 +20,6 @@ export function removeFromArray<T>(arr: T[], elem: T) {
   }
   return false
 }
-export function addChild(parent: Parent<any>, child: Child) {
-  return addToArray(parent.children, child)
-}
-
-export function addDiffChild(parent: Parent<any>, child: Child) {
-  return addToArray(parent.diffChildren, child)
-}
-
-export function removeChild(parent: Parent<any>, child: Child) {
-  if (
-    removeFromArray(parent.children, child) &&
-    parent.children.length === 0 &&
-    isChild(parent)
-  ) {
-    for (const grandparent of parent.parents) {
-      removeChild(grandparent, parent)
-    }
-  }
-}
-
-export function removeDiffChild(parent: Parent<any>, child: Child) {
-  if (
-    removeFromArray(parent.diffChildren, child) &&
-    parent.diffChildren.length === 0 &&
-    isChild(parent)
-  ) {
-    for (const grandparent of parent.diffParents) {
-      removeChild(grandparent, parent)
-    }
-  }
-}
 
 function __parentEpochsHaveChanged(child: Child) {
   {
@@ -86,3 +55,13 @@ export function haveParentsChanged(child: Child) {
   }
   return __parentEpochsHaveChanged(child)
 }
+
+export function equals(a: any, b: any) {
+  return (
+    a === b ||
+    Object.is(a, b) ||
+    Boolean(a && b && typeof a.equals === "function" && a.equals(b))
+  )
+}
+
+export declare function assertNever(x: never): never

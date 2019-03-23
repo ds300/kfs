@@ -1,6 +1,7 @@
 import { Parent, Child, UseIncremental, Derivable, DiffOf } from "./types"
-import { addChild, removeChild, addDiffChild } from "./helpers"
+import { addChild, removeChild, addDiffChild } from "./markAndSweep";
 
+const RESET = Symbol("reset incremental derivable")
 export class UseContext {
   child: Child
   constructor(child: Child) {
@@ -64,7 +65,14 @@ export class UseContext {
       return result
     },
     {
-      diff: <T>(derivable: Derivable<T>): DiffOf<T> => {
+      reset: () => {
+        // TODO: set some flag so that we can warn if they called this without
+        // returning the symbol
+        return RESET as never
+      },
+      diff: <T>(
+        derivable: Derivable<T>,
+      ): ReturnType<Derivable<T>["__unsafe_get_diff"]> => {
         const parent = (derivable as unknown) as Parent<T>
         if (!this.capturing) {
           // TODO: use epoch numbers for capturing too
@@ -95,13 +103,13 @@ export class UseContext {
               throw new Error("invariant violation: diffs must be arrays")
             }
             return r
-          }) as unknown) as DiffOf<T>
+          }) as unknown) as ReturnType<Derivable<T>["__unsafe_get_diff"]>
         }
         this.diffEpochs[parentIndex] = parent.epoch
         if (!Array.isArray(result)) {
           throw new Error("invariant violation: diffs must be arrays")
         }
-        return result as DiffOf<T>
+        return result as ReturnType<Derivable<T>["__unsafe_get_diff"]>
       },
     },
   )

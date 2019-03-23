@@ -2,7 +2,8 @@ import { Child, Use, Parent, UseIncremental } from "./types"
 
 import { UseContext } from "./UseContext"
 
-import { haveParentsChanged, removeChild } from "./helpers"
+import { haveParentsChanged } from "./helpers"
+import { removeChild } from "./markAndSweep"
 
 export class Reactor implements Child {
   constructor(
@@ -21,7 +22,11 @@ export class Reactor implements Child {
     if (parentsHaveChanged instanceof Promise) {
       parentsHaveChanged = await parentsHaveChanged
     }
-    if (this.parents.length && !parentsHaveChanged) {
+    // only bail out if havn't started capturing yet
+    if (
+      (this.parents.length || this.diffParents.length) &&
+      !parentsHaveChanged
+    ) {
       return
     }
     this.ctx.startCapture()
@@ -30,6 +35,11 @@ export class Reactor implements Child {
       await result
     }
     this.ctx.stopCapture()
+    if (this.diffParents.length + this.parents.length === 0) {
+      console.error("reactor failed to use any derivables. stopping.")
+      this._stop()
+      return
+    }
     if (this.stopping) {
       this._stop()
     }
@@ -39,7 +49,7 @@ export class Reactor implements Child {
   }
   _stop() {
     for (const parent of this.parents) {
-      removeChild(parent, this)
+      removeChild(parent, this, true)
     }
     this.parents = []
   }

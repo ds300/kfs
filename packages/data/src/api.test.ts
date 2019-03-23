@@ -1,5 +1,6 @@
 import { atom, reactor, derive, Derivable } from "./api"
 import { Diffable, DiffOf } from "./impl/types"
+import { assertNever } from "./impl/helpers"
 
 const deref = async <T>(derivable: Derivable<T>): Promise<T> => {
   return new Promise(resolve => {
@@ -204,16 +205,21 @@ describe("reactors", () => {
       },
     ])
 
-    value.update(val => val.remove("banana").add("poughkeepsie").add("joelle"))
+    value.update(val =>
+      val
+        .remove("banana")
+        .add("poughkeepsie")
+        .add("joelle"),
+    )
 
     expect(theDiffIs).toHaveBeenCalledWith([
       {
         type: "add",
-        key: "poughkeepsie"
+        key: "poughkeepsie",
       },
       {
         type: "add",
-        key: "joelle"
+        key: "joelle",
       },
       {
         type: "remove",
@@ -269,6 +275,7 @@ class DiffableSet implements Diffable<SetDiff> {
     }
     return new DiffableSet(this.elements.concat([elem]))
   }
+
   remove(elem: string) {
     if (!this.elements.includes(elem)) {
       return this
@@ -278,6 +285,17 @@ class DiffableSet implements Diffable<SetDiff> {
       .slice(0, index)
       .concat(this.elements.slice(index + 1))
     return new DiffableSet(newElems)
+  }
+
+  equals(other: this) {
+    return (
+      this.elements.length === other.elements.length &&
+      this.elements.every(e => other.has(e))
+    )
+  }
+
+  has(elem: string) {
+    return this.elements.includes(elem)
   }
 }
 
@@ -306,7 +324,7 @@ describe("derivations", () => {
     r.stop()
   })
 
-  it("can be async", async () => {
+  it.only("can be async", async () => {
     const wordA = atom("button")
     const wordB = atom("down")
 
@@ -326,7 +344,7 @@ describe("derivations", () => {
     await timeout(30)
     expect(theValueIs).toHaveBeenCalledWith("button down")
 
-    wordB.set("up")
+    await wordB.set("up")
 
     await timeout(30)
     expect(theValueIs).toHaveBeenCalledWith("button up")
@@ -334,48 +352,104 @@ describe("derivations", () => {
     r.stop()
   })
 
-  xit("can be incremental", async () => {
-    const root = atom("banana")
-    const reversed = derive(
-      use =>
-        use(root)
-          .split("")
-          .reverse()
-          .join(""),
-      {
-        incremental: async use => {
-          const diff = await use.diff(root)
-          return diff.map(patch => {
-            switch (patch.type) {
-              case "reset":
-                return {
-                  type: "reset" as "reset",
-                  value: patch.value
-                    .split("")
-                    .reverse()
-                    .join(""),
-                }
-            }
-          })
-        },
-      },
-    )
-    const theValueIs = jest.fn()
+  it("can be passive incremental", async () => {
+    const setA = atom(new DiffableSet())
+    const setB = atom(new DiffableSet())
+    const intersection = derive(use => {
+      return new DiffableSet(use(setA).elements.filter(e => use(setB).has(e)))
+    })
 
-    const r = reactor(async use => {
-      theValueIs(await use.diff(reversed))
+    const theDiffIs = jest.fn()
+    const r = reactor(use => {
+      theDiffIs(use.diff(intersection))
     }).start()
 
-    await timeout(1)
-
-    expect(theValueIs).toHaveBeenCalledWith([
+    expect(theDiffIs).toBeCalledWith([
       {
         type: "reset",
-        value: "ananab",
+        value: new DiffableSet(),
       },
     ])
 
+    theDiffIs.mockReset()
+    setA.update(set => set.add("banana"))
+    expect(theDiffIs).not.toHaveBeenCalled()
+    setB.update(set => set.add("banana"))
+    expect(theDiffIs).toHaveBeenCalledWith([
+      {
+        type: "add",
+        key: "banana",
+      },
+    ])
     r.stop()
+  })
+
+  it("can be active incremental", async () => {
+    const setA = atom(new DiffableSet(["a", "b", "c"]))
+    const setB = atom(new DiffableSet(["d", "e", "f"]))
+    const union = derive(
+      use => {
+        return use(setA).elements.reduce((acc, e) => acc.add(e), use(setB))
+      },
+      {
+        incremental: use => {
+          const a = use(setA)
+          const b = use(setB)
+          const diffA = use.diff(setA)
+          const diffB = use.diff(setB)
+
+          //  idea!
+          /**
+           * make DiffHistory helper for diffable immutable data types
+           * whenever you make a new version of your datatype, you add
+           * a reference to the previous version along with a memoized
+           * diff. It's a deque so the helper can trim it if it gets
+           * too long. It will be hooked into the transaction system
+           * and collapse diffs accrued during a transaction. It will
+           * let the diffs grow arbitrarily long during a transaction.
+           */
+
+          const result: SetDiff[] = []
+          for (const patch of diffA) {
+            switch (patch.type) {
+              case "reset":
+                // bail out
+                // if bail out, delete diff parents
+                return use.reset()
+              case "add":
+                result.push(patch)
+                break
+              case "remove":
+                if (!b.has(patch.key)) {
+                  result.push(patch)
+                }
+                break
+              default:
+                assertNever(patch)
+            }
+          }
+          for (const patch of diffB) {
+            switch (patch.type) {
+              case "reset":
+                // bail out
+                // if bail out, delete diff parents
+                return use.reset()
+              case "add":
+                result.push(patch)
+                break
+              case "remove":
+                if (!a.has(patch.key)) {
+                  result.push(patch)
+                }
+                break
+              default:
+                assertNever(patch)
+            }
+          }
+          return result
+        },
+      },
+    )
   })
 })
 

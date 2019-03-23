@@ -1,11 +1,17 @@
-import { UseIncremental, MaybePromise, Derivable, DiffOf } from "./impl/types"
+import {
+  UseIncremental,
+  MaybePromise,
+  Derivable,
+  DiffOf,
+  SyncDerivable,
+} from "./impl/types"
 import { Reactor as ReactorImpl } from "./impl/Reactor"
 import { Atom } from "./impl/Atom"
 import { Derivation } from "./impl/Derivation"
 
 export { Derivable }
 
-export interface Store<T> extends Derivable<T> {
+export interface Store<T> extends SyncDerivable<T> {
   set(value: T): Promise<T>
   update(updater: (val: T) => T): Promise<T>
 }
@@ -43,7 +49,9 @@ export function atom<T>(init: T): Store<T> {
 export function derive<T>(
   deriver: (use: Use) => T,
   options?: {
-    incremental: (use: UseIncremental) => MaybePromise<DiffOf<T>>
+    incremental: T extends Promise<infer R>
+      ? (use: UseIncremental) => Promise<DiffOf<R>>
+      : (use: UseIncremental) => DiffOf<T>
   },
 ): Derivable<T> {
   return new Derivation(deriver as any) as any

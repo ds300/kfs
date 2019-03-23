@@ -2,10 +2,18 @@ import { Reactor } from "./Reactor"
 
 export type UnpackPromise<T> = T extends Promise<infer R> ? R : T
 
-export interface Derivable<T> {
+export interface SyncDerivable<T> {
   __unsafe_get_value(): T
-  __unsafe_get_diff(sinceEpoch: number): MaybePromise<DiffOf<UnpackPromise<T>>>
+  __unsafe_get_diff(sinceEpoch: number): DiffOf<T>
 }
+export interface AsyncDerivable<T> {
+  __unsafe_get_value(): Promise<T>
+  __unsafe_get_diff(sinceEpoch: number): Promise<DiffOf<T>>
+}
+
+export type Derivable<T> = T extends Promise<infer R>
+  ? AsyncDerivable<R>
+  : SyncDerivable<T>
 
 export interface Child {
   parents: Parent<any>[]
@@ -15,7 +23,9 @@ export interface Child {
   traverseReactors(cb: (reactor: Reactor) => void): void
 }
 
-export interface Parent<T> extends Derivable<T> {
+export interface Parent<T> {
+  __unsafe_get_value(): unknown
+  __unsafe_get_diff(sinceEpoch: number): unknown
   children: Child[]
   diffChildren: Child[]
   epoch: number
@@ -34,7 +44,11 @@ export interface BaseDiff<T> {
 export type MaybePromise<T> = T | Promise<T>
 
 export type UseIncremental = Use & {
-  diff<T>(derivable: Derivable<T>): MaybePromise<DiffOf<T>>
+  diff<T>(
+    derivable: Derivable<T>,
+  ): ReturnType<Derivable<T>["__unsafe_get_diff"]>
+  // TODO: keep this out of reactors
+  reset(): never
 }
 
 export type Use = <T>(derivable: Derivable<T>) => T

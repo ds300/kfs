@@ -1,9 +1,11 @@
-import { Parent, Derivable, Child, diff } from "./types"
+import { Parent, Derivable, Child, diff, SyncDerivable } from "./types"
 
 import { Reactor } from "./Reactor"
 import { DiffBuffer } from "./DiffBuffer"
+import { equals } from "./helpers"
+import { beginMarkPhase, sweep } from "./markAndSweep"
 
-export class Atom<T> implements Parent<T>, Derivable<T> {
+export class Atom<T> implements Parent<T>, SyncDerivable<T> {
   constructor(initialState: T) {
     this.state = initialState
   }
@@ -27,7 +29,7 @@ export class Atom<T> implements Parent<T>, Derivable<T> {
   }
 
   async set(value: T): Promise<T> {
-    if (value === this.state) {
+    if (equals(value, this.state)) {
       return value
     }
     this.epoch++
@@ -40,7 +42,7 @@ export class Atom<T> implements Parent<T>, Derivable<T> {
     } else {
       this.diffs.add(null)
     }
-    const reactors: Reactor[] =[]
+    const reactors: Reactor[] = []
     this.state = value
     for (const child of this.children) {
       child.traverseReactors(r => {
@@ -56,8 +58,10 @@ export class Atom<T> implements Parent<T>, Derivable<T> {
         }
       })
     }
+    beginMarkPhase()
     // TODO: handle timeouts
     await Promise.all(reactors.map(r => r.react()))
+    sweep()
     return value
   }
   update(updater: (value: T) => T): Promise<T> {
