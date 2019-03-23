@@ -61,11 +61,11 @@ export class Reactor implements Child {
     }
     return this
   }
-  start() {
+  async start() {
     if (this.ctx.capturing) {
       this.stopping = false
     } else {
-      this.react()
+      await this.react()
     }
     return this
   }

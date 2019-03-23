@@ -21,25 +21,21 @@ describe("atoms", () => {
     expect(atom("init")).toBeTruthy()
   })
 
-  it("can be reacted to", () => {
+  it("can be reacted to", async () => {
     const state = atom("hello")
-    reactor(use => {
-      const val = use(state)
-      expect(val).toBe("hello")
-    }).start()
-    expect.assertions(1)
+    expect(await deref(state)).toBe("hello")
   })
 
   it("can be reacted to multiple times", async () => {
     const state = atom("hello")
     const theValueIs = jest.fn()
-    reactor(use => {
+    const r = await reactor(use => {
       theValueIs(use(state))
     }).start()
     expect(theValueIs).toHaveBeenCalledWith("hello")
     await state.update(_ => "hello world")
-    await timeout(10)
     expect(theValueIs).toHaveBeenCalledWith("hello world")
+    r.stop()
   })
 })
 
@@ -49,22 +45,21 @@ describe("reactors", () => {
     const b = atom("b")
 
     const theValueIs = jest.fn()
-    reactor(async use => {
+    const r = await reactor(async use => {
       const valA = use(a)
       await timeout(20)
       const valB = use(b)
       theValueIs(valA + valB)
     }).start()
 
-    await timeout(30)
     expect(theValueIs).toHaveBeenCalledWith("ab")
 
     await b.set("c")
 
-    await timeout(30)
     expect(theValueIs).toHaveBeenCalledWith("ac")
 
     expect(theValueIs).toHaveBeenCalledTimes(2)
+    r.stop()
   })
 
   it("only react when the parent changes", async () => {
@@ -76,7 +71,7 @@ describe("reactors", () => {
       }
     })
     const theValueIs = jest.fn()
-    const r = reactor(use => {
+    const r = await reactor(use => {
       theValueIs(use(anan))
     }).start()
     expect(theValueIs).toHaveBeenCalledTimes(1)
@@ -100,7 +95,7 @@ describe("reactors", () => {
     })
 
     const theValueIs = jest.fn()
-    const r = reactor(use => {
+    const r = await reactor(use => {
       theValueIs(use(aAndB))
     }).start()
 
@@ -124,14 +119,7 @@ describe("reactors", () => {
 
   it("can be incremental", async () => {
     const value = atom("hello")
-    const val = await new Promise(resolve =>
-      reactor(use => {
-        resolve(use.diff(value))
-      })
-        .start()
-        .stop(),
-    )
-    expect(val).toEqual([
+    expect(await derefDiff(value)).toEqual([
       {
         type: "reset",
         value: "hello",
@@ -163,7 +151,7 @@ describe("reactors", () => {
   it("can be properly incremental (diffable set)", async () => {
     const value = atom(new DiffableSet())
     const theDiffIs = jest.fn()
-    const r = reactor(use => {
+    const r = await reactor(use => {
       theDiffIs(use.diff(value))
     }).start()
 
@@ -232,10 +220,8 @@ describe("reactors", () => {
 })
 
 const derefDiff = <T>(d: Derivable<T>) =>
-  new Promise<DiffOf<T>>(resolve =>
-    reactor(use => resolve(use.diff(d)))
-      .start()
-      .stop(),
+  new Promise<DiffOf<T>>(async resolve =>
+    (await reactor(use => resolve(use.diff(d))).start()).stop(),
   )
 
 type SetDiff = { type: "add"; key: string } | { type: "remove"; key: string }
@@ -311,7 +297,7 @@ describe("derivations", () => {
     const word = atom("hello")
     const upper = derive(use => use(word).toUpperCase())
     const theValueIs = jest.fn()
-    const r = reactor(use => {
+    const r = await reactor(use => {
       theValueIs(use(upper))
     }).start()
 
@@ -337,16 +323,14 @@ describe("derivations", () => {
     })
 
     const theValueIs = jest.fn()
-    const r = reactor(async use => {
+    const r = await reactor(async use => {
       theValueIs(await use(combined))
     }).start()
 
-    await timeout(30)
     expect(theValueIs).toHaveBeenCalledWith("button down")
 
     await wordB.set("up")
 
-    await timeout(30)
     expect(theValueIs).toHaveBeenCalledWith("button up")
 
     r.stop()
@@ -360,7 +344,7 @@ describe("derivations", () => {
     })
 
     const theDiffIs = jest.fn()
-    const r = reactor(use => {
+    const r = await reactor(use => {
       theDiffIs(use.diff(intersection))
     }).start()
 

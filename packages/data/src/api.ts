@@ -17,7 +17,7 @@ export interface Store<T> extends SyncDerivable<T> {
 }
 
 export interface Reactor {
-  start(): this
+  start(): Promise<this>
   stop(): this
 }
 
