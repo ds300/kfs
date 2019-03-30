@@ -1,5 +1,5 @@
 import { AsyncDerivable } from "./impl/types"
-import { DirectoryEntry } from "./Directory"
+import { DirectoryEntry, File } from "./Directory"
 import { derive } from "./api"
 
 export function transform(
@@ -8,12 +8,21 @@ export function transform(
   return derive(async use => {
     const files = await use(dirFiles)
     return files.concat(
-      files.map(f => ({
-        name: f.name
-          .split("")
-          .reverse()
-          .join(""),
-      })),
+      files.filter(File.isFile).map(f => {
+        return File.fromString(
+          f.name
+            .split("")
+            .reverse()
+            .join(""),
+          derive(async use => {
+            const text = await use(f.text)
+            return text
+              .split("")
+              .reverse()
+              .join("")
+          }),
+        )
+      }),
     )
   })
 }

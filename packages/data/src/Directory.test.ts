@@ -1,5 +1,6 @@
 import { SourceDirectory, File, SourceFile } from "./Directory"
 import { reactor, Derivable } from "./api"
+import { promises } from "fs"
 
 describe(SourceDirectory, () => {
   it("can be created", () => {
@@ -63,9 +64,20 @@ Array [
   "st.yrotceriD",
   "st.tset.ipa",
   "st.ipa",
-  "lpmi",
 ]
 `)
+
+    const thisFileReversed = srcEntries.filter(
+      f => f.name === "st.tset.yrotceriD",
+    )[0] as File
+
+    expect(await deref(thisFileReversed.text)).toBe(
+      (await promises.readFile(__filename))
+        .toString()
+        .split("")
+        .reverse()
+        .join(""),
+    )
   })
 
   it("lets you read files", async () => {

@@ -1,4 +1,9 @@
-import { AsyncDerivable, SyncDerivable } from "./impl/types"
+import {
+  AsyncDerivable,
+  SyncDerivable,
+  MaybePromise,
+  Derivable,
+} from "./impl/types"
 import * as path from "path"
 import { atom, Store, derive } from "./api"
 import { promises } from "fs"
@@ -9,9 +14,48 @@ export interface DirectoryEntry {
 export interface File extends DirectoryEntry {
   readonly size: AsyncDerivable<number>
   readonly handle: AsyncDerivable<{ getBuffer(): Promise<Buffer> }>
+  readonly text: AsyncDerivable<string>
 }
 
 export interface Directory extends DirectoryEntry {}
+
+export namespace File {
+  export function isFile(x: any): x is File {
+    return x instanceof DerivedFile || x instanceof SourceFile
+  }
+  export function fromString(
+    name: string,
+    data: Derivable<MaybePromise<string>>,
+  ): File {
+    return new DerivedFile(
+      name,
+      derive(
+        async use =>
+          Buffer.from(await use(data as AsyncDerivable<string>)).length,
+      ),
+      derive(async use => {
+        const text = await use(data as AsyncDerivable<string>)
+        return {
+          getBuffer: async () => Buffer.from(text),
+        }
+      }),
+      derive(async use => await use(data as AsyncDerivable<string>)),
+      derive(async use =>
+        JSON.parse(await use(data as AsyncDerivable<string>)),
+      ),
+    )
+  }
+}
+
+export class DerivedFile implements File {
+  constructor(
+    public readonly name: string,
+    public readonly size: AsyncDerivable<number>,
+    public readonly handle: AsyncDerivable<{ getBuffer(): Promise<Buffer> }>,
+    public readonly text: AsyncDerivable<string>,
+    public readonly json: AsyncDerivable<object>,
+  ) {}
+}
 
 export class SourceFile implements File {
   readonly sourcePath: string
@@ -54,18 +98,6 @@ interface RawFileDescriptor {
 }
 
 export class SourceDirectory implements Directory {
-  isDirectory() {
-    return true
-  }
-  isFile() {
-    return false
-  }
-  isSourceDirectory() {
-    return true
-  }
-  isSourceFile() {
-    return false
-  }
   private readonly sourcePath: string
   readonly name: string
   private readonly rawDirectoryListing: AsyncDerivable<RawFileDescriptor[]>
@@ -119,7 +151,9 @@ export class SourceDirectory implements Directory {
       (
         files: AsyncDerivable<DirectoryEntry[]>,
       ) => AsyncDerivable<DirectoryEntry[]>
-    > = (await Promise.all(deriveFiles.map(f => use(f.require).then(m => m.transform)))) as any
+    > = (await Promise.all(
+      deriveFiles.map(f => use(f.require).then(m => m.transform)),
+    )) as any
 
     return derivers.reduce((acc, deriver) => deriver(acc), this.rawEntries)
   })
