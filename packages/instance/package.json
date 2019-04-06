@@ -1,0 +1,47 @@
+{
+  "name": "@kfs/instance",
+  "version": "0.0.1-0",
+  "main": "dist/instance.js",
+  "license": "MIT",
+  "files": [
+    "README.md",
+    "LICENSE",
+    "dist"
+  ],
+  "lint-staged": {
+    "*.ts": [
+      "prettier --no-semi --trailing-comma=all --list-different"
+    ]
+  },
+  "scripts": {
+    "test": "yarn build && yarn build-fs && jest",
+    "build-fs": "cd ../fs && yarn pack-hashed",
+    "precommit": "lint-staged",
+    "lint": "prettier --no-semi --trailing-comma=all --list-different '**/*.ts' '**/*.js' '**/*.tsx",
+    "prepush": "yarn type-check",
+    "type-check": "tsc --noEmit --project tsconfig.json",
+    "build": "tsc --project tsconfig.build.json",
+    "clean": "rimraf dist *.tgz",
+    "prepack": "rimraf dist/**/*.test.js dist/**/__*",
+    "prepublishOnly": "yarn run clean && yarn run build"
+  },
+  "dependencies": {
+    "@types/node": "^11.13.0",
+    "@types/semver": "^6.0.0",
+    "@yarnpkg/lockfile": "^1.1.0",
+    "husky": "^1.3.1",
+    "jest": "^24.7.1",
+    "lint-staged": "^8.1.5",
+    "prettier": "^1.16.4",
+    "semver": "^6.0.0",
+    "ts-jest": "^24.0.2",
+    "typescript": "^3.4.2"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^5.0.5",
+    "@types/jest": "^24.0.11",
+    "@types/tmp": "^0.1.0",
+    "fs-extra": "^7.0.1",
+    "tmp": "^0.1.0"
+  }
+}
