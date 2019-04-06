@@ -9,7 +9,7 @@ import { Reactor as ReactorImpl } from "./impl/Reactor"
 import { Atom } from "./impl/Atom"
 import { Derivation } from "./impl/Derivation"
 import { IncrementalDerivation } from "./impl/IncrementalDerivation"
-import { MaybePromise } from "graphql/jsutils/MaybePromise";
+import { MaybePromise } from "./impl/types"
 
 export { Derivable }
 
@@ -26,14 +26,14 @@ export interface Reactor {
 export type Use = <T>(derivable: Derivable<T>) => T
 
 export function reactor(
-  reactFn: (use: UseIncremental) => void | Promise<void>,
+  reactFn: (use: UseIncremental) => void | Promise<void>
 ): Reactor {
   return new ReactorImpl(reactFn as any)
 }
 
 export function when(
   condition: Derivable<any>,
-  reactFn: (use: Use) => void | Promise<void>,
+  reactFn: (use: Use) => void | Promise<void>
 ) {
   const subordinate = reactor(reactFn)
   const leader = reactor(async use => {
@@ -55,8 +55,8 @@ export function derive<T extends MaybePromise<Patchable<any>>>(
     incremental: T extends Promise<infer R>
       ? (use: UseIncremental) => Promise<DiffOf<R>>
       : (use: UseIncremental) => DiffOf<T>
-  },
-): Derivable<T>;
+  }
+): Derivable<T>
 export function derive(deriver: any, options?: any) {
   if (options) {
     return new IncrementalDerivation(deriver, options.incremental)

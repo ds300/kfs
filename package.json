@@ -2,7 +2,8 @@
   "name": "kfs",
   "private": true,
   "scripts": {
-    "test": "yarn workspaces run test"
+    "test": "yarn workspaces run test",
+    "new-package": "node ./scripts/make-new-package.js"
   },
   "workspaces": [
     "packages/*"
@@ -10,5 +11,6 @@
   "dependencies": {},
   "devDependencies": {
     "lerna": "^3.13.1"
-  }
+  },
+  "version": "0.0.1-0"
 }

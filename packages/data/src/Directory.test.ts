@@ -2,6 +2,34 @@ import { SourceDirectory, File, SourceFile } from "./Directory"
 import { reactor, Derivable } from "./api"
 import { promises } from "fs"
 
+/**
+ * i don't know what to do next
+ *
+ * What was the last thing you did?
+ *
+ * I got basic derived files working. No caching.
+ *
+ * Ok. What's the next thing that would make you feel like you're making progress.
+ *
+ * I want to compile a typescript project
+ *
+ * Alright, what's stopping you from doing that?
+ *
+ * The notion of a project doesn't exist yet.
+ *
+ * So implement the notion of a project?
+ *
+ * Hmm yeah. But. Like. How.
+ *
+ * What's in a project?
+ *
+ * The source tree. I know what that will look like already, with the derived files and all.
+ * I need to implement custom resolution too. And basic stuff like getFile('path'), readFile('path'), makeFile('blah'), readJson('path'), readText('')
+ *
+ * Woah woah slow down.
+ *
+ */
+
 describe(SourceDirectory, () => {
   it("can be created", () => {
     const dir = new SourceDirectory({
@@ -38,7 +66,7 @@ Array [
 `)
   })
 
-  it.only("lists derived files", async () => {
+  it("lists derived files", async () => {
     const dir = new SourceDirectory({
       sourcePath: process.cwd(),
       isDirectory: true,
@@ -90,7 +118,7 @@ Array [
     const entries = await deref(dir.entries)
 
     const packageJson = entries.filter(
-      file => file.name === "package.json",
+      file => file.name === "package.json"
     )[0] as SourceFile
 
     const json = await deref(packageJson.json)

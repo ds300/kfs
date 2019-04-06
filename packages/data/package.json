@@ -1,25 +1,27 @@
 {
   "name": "@kfs/data",
   "version": "0.0.1-0",
-  "main": "dist/api.js",
+  "main": "dist/data.js",
   "license": "MIT",
-  "scripts": {
-    "test": "jest",
-    "prepublishOnly": "tsc"
-  },
   "files": [
+    "README.md",
+    "LICENSE",
     "dist"
   ],
-  "publishConfig": {
-    "access": "public"
+  "lint-staged": {
+    "*.ts": [
+      "prettier --no-semi --trailing-comma=all --list-different"
+    ]
   },
-  "devDependencies": {
-    "@types/jest": "^24.0.11",
-    "jest": "^24.3.1",
-    "prettier": "^1.16.4",
-    "ts-jest": "^24.0.0",
-    "ts-node": "^8.0.3",
-    "typescript": "^3.3.3333"
-  },
-  "dependencies": {}
+  "scripts": {
+    "test": "jest",
+    "precommit": "lint-staged",
+    "lint": "prettier --no-semi --trailing-comma=all --list-different '**/*.ts' '**/*.js' '**/*.tsx",
+    "prepush": "yarn type-check",
+    "type-check": "tsc --noEmit --project tsconfig.json",
+    "build": "tsc",
+    "clean": "rimraf dist *.tgz",
+    "prepack": "rimraf dist/**/*.test.js dist/**/__*",
+    "prepublishOnly": "yarn run clean && yarn run build"
+  }
 }
